@@ -1,0 +1,28 @@
+---
+import Card from "@components/Card";
+import Layout from "../layouts/Layout.astro";
+
+if (
+  Astro.request.method == "GET" &&
+  Astro.request.headers.has("Content-Request")
+) {
+  console.log("Llamado");
+  return new Response(
+    JSON.stringify({
+      code: 200,
+      hasError: false,
+      payload: {
+        propieda: "hi",
+      },
+    }),
+    { status: 200 }
+  );
+}
+---
+
+<Layout title="Welcome to Astro.">
+  <main>
+    <h1 class="text-white text-3xl">Hola</h1>
+    <Card client:load />
+  </main>
+</Layout>
