@@ -1,3 +1,4 @@
 ---
 if (Astro.cookies.has("__tk__") == false) return Astro.redirect("/SignIn");
+if (Astro.cookies.has("__tk__") == true) return Astro.redirect("/myInfo");
 ---
