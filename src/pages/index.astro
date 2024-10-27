@@ -1,12 +1,17 @@
 ---
-import Card from "@components/Card";
-import Layout from "../layouts/Layout.astro";
+import Layout from "@layouts/Layout.astro";
+
+if (Astro.cookies.has("__tk__") == false) return Astro.redirect("/SignIn");
+
+const credentials = {
+  email: "user8@example.com",
+  password: "use1234",
+};
 
 if (
   Astro.request.method == "GET" &&
   Astro.request.headers.has("Content-Request")
 ) {
-  console.log("Llamado");
   return new Response(
     JSON.stringify({
       code: 200,
@@ -23,6 +28,5 @@ if (
 <Layout title="Welcome to Astro.">
   <main>
     <h1 class="text-white text-3xl">Hola</h1>
-    <Card client:load />
   </main>
 </Layout>

@@ -1,0 +1,22 @@
+---
+export const prerender = false;
+
+if (Astro.request.method == "POST") {
+  if (Astro.cookies.has("__tk__") === false) return Astro.redirect("/myIfno");
+
+  try {
+    Astro.cookies.delete("__tk__");
+    return new Response(JSON.stringify({ success: "true" }), { status: 200 });
+  } catch (error) {
+    return new Response(
+      JSON.stringify({
+        code: 400,
+        hasError: true,
+        payload: "Error (Logout)",
+      }),
+      { status: 400 }
+    );
+  }
+}
+return Astro.redirect("/myInfo");
+---

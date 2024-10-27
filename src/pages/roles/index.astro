@@ -1,0 +1,39 @@
+---
+import type { ApiResponse } from "@/interfaces";
+import type { Employee, role } from "@/interfaces";
+import { getRoles } from "@services/roles";
+import Table from "@components/shared/Table";
+import Layout from "@/layouts/Layout.astro";
+
+if (Astro.cookies.has("__tk__") == false) return Astro.redirect("/SignIn");
+
+const userSession: Employee = JSON.parse(Astro.cookies.get("__user__").value);
+
+if (userSession.roleName.toLowerCase() != "administrador")
+  return Astro.redirect("/myInfo");
+const token = Astro.cookies.get("__tk__").value;
+
+const roles: ApiResponse<role> = await getRoles(token);
+if (!roles || !roles.payload) {
+  // Handle the case where the employee data is not found
+  return new Response("Internal server error.", {
+    status: 500,
+  });
+}
+const headers = ["id", "roleName"];
+---
+
+<Layout title="Roles">
+  <div class="p-4">
+    <h2 class="text-xl font-bold mb-4">Role Table</h2>
+    {
+      roles.hasError ? (
+        <p class="text-red-500">Error loading roles</p>
+      ) : (
+        <div>
+          <Table headers={headers} data={roles.payload} client:load />
+        </div>
+      )
+    }
+  </div>
+</Layout>

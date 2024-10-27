@@ -1,0 +1,55 @@
+---
+import Layout from "@layouts/Layout.astro";
+
+import { getAllEmployees } from "@/services/employees";
+import type { ApiResponse, Employee } from "@/interfaces";
+import Table from "@/components/shared/Table";
+
+if (Astro.cookies.has("__tk__") == false) return Astro.redirect("/SignIn");
+
+const token = Astro.cookies.get("__tk__").value;
+const userSession: Employee = JSON.parse(Astro.cookies.get("__user__").value);
+
+if (userSession.roleName.toLowerCase() != "administrador")
+  return Astro.redirect("/myInfo");
+
+const res: ApiResponse<Employee> = await getAllEmployees(token);
+
+if (!res || !res.payload) {
+  // Handle the case where the employee data is not found
+  return new Response("Internal server error.", {
+    status: 500,
+  });
+}
+const headers = [
+  "id",
+  "roleName",
+  "email",
+  "cedula",
+  "roleName",
+  "departmentName",
+];
+---
+
+<Layout title="Employees">
+  <div class="p-4">
+    <h2 class="text-xl font-bold mb-4">Employees Table</h2>
+    <div class="flex justify-end mb-4">
+      <a
+        href="/employees/create"
+        class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition"
+      >
+        Add an Employee
+      </a>
+    </div>
+    {
+      res.hasError ? (
+        <p class="text-red-500">Error loading Employee</p>
+      ) : (
+        <div>
+          <Table headers={headers} data={res.payload} client:load />
+        </div>
+      )
+    }
+  </div>
+</Layout>

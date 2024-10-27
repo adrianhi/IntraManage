@@ -1,0 +1,40 @@
+---
+import type { ApiResponse } from "@/interfaces";
+import type { Employee, department } from "@/interfaces";
+import { getAllDepartments } from "@services/departments";
+import Table from "@components/shared/Table";
+import Layout from "@/layouts/Layout.astro";
+
+if (Astro.cookies.has("__tk__") == false) return Astro.redirect("/SignIn");
+
+const userSession: Employee = JSON.parse(Astro.cookies.get("__user__").value);
+
+if (userSession.roleName.toLowerCase() != "administrador")
+  return Astro.redirect("/myInfo");
+const token = Astro.cookies.get("__tk__").value;
+
+const departments: ApiResponse<department> = await getAllDepartments(token);
+
+if (!departments || !departments.payload) {
+  // Handle the case where the employee data is not found
+  return new Response("Internal server error.", {
+    status: 500,
+  });
+}
+const headers = ["id", "departmentName"];
+---
+
+<Layout title="Deparments">
+  <div class="p-4">
+    <h2 class="text-xl font-bold mb-4">Department Table</h2>
+    {
+      departments.hasError ? (
+        <p class="text-red-500">Error loading departments</p>
+      ) : (
+        <div>
+          <Table headers={headers} data={departments.payload} client:load />
+        </div>
+      )
+    }
+  </div>
+</Layout>

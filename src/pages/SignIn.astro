@@ -1,0 +1,39 @@
+---
+import { arrayBufferToString } from "@utils/buffer";
+import SignInForm from "@components/auth/SignIn";
+import type { ApiResponse, Login } from "@interfaces/index";
+import { login } from "@services/auth/index";
+
+export const prerender = false;
+
+if (Astro.cookies.has("__tk__") == true) return Astro.redirect("/myInfo");
+
+if (Astro.request.method == "POST") {
+  const reqRead = await Astro.request.body.getReader().read();
+  const formData = JSON.parse(arrayBufferToString(reqRead.value.buffer));
+  const res: ApiResponse<Login> = await login(formData);
+  if (res && res.hasError == false) {
+    const { token, ...user } = res.payload;
+    const userCookieValue = JSON.stringify(user);
+    Astro.cookies.set("__tk__", res.payload.token.toString(), {
+      httpOnly: true,
+      sameSite: true,
+      maxAge: 60 * 60 * 2,
+    });
+
+    Astro.cookies.set("__user__", userCookieValue, {
+      httpOnly: true,
+      sameSite: true,
+      maxAge: 60 * 60 * 2,
+    });
+    Astro.response.status = 200;
+    Astro.response.statusText = JSON.stringify(user);
+    return new Response(JSON.stringify(res), { status: 200 });
+  }
+  return new Response(JSON.stringify(res), { status: 400 });
+}
+---
+
+<main>
+  <SignInForm client:load />
+</main>

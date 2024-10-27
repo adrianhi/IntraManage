@@ -1,0 +1,43 @@
+---
+import type {
+  ApiResponse,
+  CreateEmployee,
+  department,
+  Employee,
+  role,
+} from "@/interfaces";
+import Layout from "@/layouts/Layout.astro";
+import CreateUserForm from "@components/createUserForm";
+import { arrayBufferToString } from "@/utils/buffer";
+import { createEmployee } from "@services/employees/index";
+import { getAllDepartments } from "@/services/departments";
+import { getRoles } from "@/services/roles";
+export const prerender = false;
+
+if (Astro.cookies.has("__tk__") == false) return Astro.redirect("/SignIn");
+const userSession: Employee = JSON.parse(Astro.cookies.get("__user__").value);
+
+if (userSession.roleName.toLowerCase() != "administrador")
+  return Astro.redirect("/myInfo");
+
+const token = Astro.cookies.get("__tk__").value;
+
+const deparmentRes: ApiResponse<department[]> = await getAllDepartments(token);
+const roleRes: ApiResponse<role[]> = await getRoles(token);
+
+const roles: role[] = roleRes.payload;
+const departments: department[] = deparmentRes.payload;
+
+if (Astro.request.method == "POST") {
+  const body = await Astro.request.formData();
+  const token = Astro.cookies.get("__tk__").value;
+
+  const res: ApiResponse<Employee> = await createEmployee(token, body);
+
+  return new Response(JSON.stringify(res), { status: 201 });
+}
+---
+
+<Layout title="Create employe">
+  <CreateUserForm roles={roles} departments={departments} client:load />
+</Layout>

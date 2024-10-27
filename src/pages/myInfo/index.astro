@@ -1,0 +1,92 @@
+---
+import type { ApiResponse } from "@/interfaces";
+import type { Employee } from "@/interfaces";
+import { getEmployeeById } from "@services/employees";
+import Layout from "@/layouts/Layout.astro";
+if (Astro.cookies.has("__tk__") == false) return Astro.redirect("/SignIn");
+
+const userSession: Employee = JSON.parse(Astro.cookies.get("__user__").value);
+const token = Astro.cookies.get("__tk__").value;
+
+const res: ApiResponse<Employee> = await getEmployeeById(token, userSession.id);
+if (!res || !res.payload) {
+  // Handle the case where the employee data is not found
+  return new Response("Internal server error.", {
+    status: 500,
+  });
+}
+const user: Employee = res.payload;
+---
+
+<Layout title="mInfo">
+  <div class="p-4">
+    <h2 class="text-xl font-bold mb-4">Information</h2>
+    <div
+      class="w-full max-w-screen-xl mx-auto p-6 bg-white rounded-lg shadow-lg"
+    >
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div class="flex flex-col">
+          <h2 id="user-name" class="text-2xl font-bold text-gray-800">
+            {user.name}
+          </h2>
+          <p class="mt-2 text-gray-600">
+            ID: <span class="font-semibold" id="user-id">{user.id}</span>
+          </p>
+          <p class="mt-2 text-gray-600">
+            Email: <span class="font-semibold">{user.email}</span>
+          </p>
+          <button
+            id="btn"
+            data-token={token}
+            class="mt-4 bg-blue-500 w-24 lg:w-3/12 text-white font-semibold py-2 px-4 rounded hover:bg-blue-600 transition duration-200"
+          >
+            View Cedula
+          </button>
+        </div>
+        <div class="flex flex-col">
+          <p class="mt-2 text-gray-600">
+            Role: <span class="font-semibold">{user.roleName}</span>
+          </p>
+          <p class="mt-2 text-gray-600">
+            Department: <span class="font-semibold">{user.departmentName}</span>
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+</Layout>
+
+<script>
+  import { getCedulaFile } from "@/services/employees";
+
+  const btn = document.getElementById("btn");
+  const userId = document.getElementById("user-id").textContent;
+  const userName = document.getElementById("user-name").textContent;
+  const token = btn.getAttribute("data-token");
+
+  const downloadPdf = async (userId) => {
+    try {
+      const response = await getCedulaFile(userId, token);
+
+      const pdfBlob = new Blob([response.data], { type: "application/pdf" });
+
+      const url = window.URL.createObjectURL(pdfBlob);
+
+      const tempLink = document.createElement("a");
+      tempLink.href = url;
+      tempLink.setAttribute("download", `user_${userName}_file.pdf`);
+
+      document.body.appendChild(tempLink);
+      tempLink.click();
+
+      document.body.removeChild(tempLink);
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error("Error downloading PDF:", error);
+    }
+  };
+
+  btn.addEventListener("click", () => {
+    downloadPdf(userId);
+  });
+</script>
